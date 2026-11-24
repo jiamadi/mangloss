@@ -48,6 +48,13 @@ pub fn read(manual: &Manual, mode: Mode, storage: Option<&Storage>) -> Result<()
         Ok(settings) => (settings.unwrap_or_default(), None),
         Err(error) => (Settings::default(), Some(format!("{error:#}"))),
     };
+    if message.is_none()
+        && settings.translation.is_none()
+        && !settings.skipped_setup
+        && let Some(storage) = storage
+    {
+        message = configure_from_reader(storage, &mut settings, true);
+    }
     let mut position = Position::default();
 
     loop {
@@ -66,16 +73,27 @@ pub fn read(manual: &Manual, mode: Mode, storage: Option<&Storage>) -> Result<()
             Action::Quit => return Ok(()),
             Action::Configure => {
                 if let Some(storage) = storage {
-                    match cli::configure(storage) {
-                        Ok(()) => settings = storage.load()?,
-                        Err(error) => {
-                            eprintln!("mangl: {error:#}\nPress Enter to return to the manual.");
-                            let _ = io::stdin().read_line(&mut String::new());
-                            message = Some(error.to_string());
-                        }
-                    }
+                    message = configure_from_reader(storage, &mut settings, false);
                 }
             }
+        }
+    }
+}
+
+fn configure_from_reader(
+    storage: &Storage,
+    settings: &mut Settings,
+    first_run: bool,
+) -> Option<String> {
+    match cli::configure(storage, first_run).and_then(|()| storage.load()) {
+        Ok(updated) => {
+            *settings = updated;
+            None
+        }
+        Err(error) => {
+            eprintln!("mangl: {error:#}\nPress Enter to return to the manual.");
+            let _ = io::stdin().read_line(&mut String::new());
+            Some(error.to_string())
         }
     }
 }

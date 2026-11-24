@@ -59,7 +59,7 @@ pub enum Mode {
 pub fn run() -> Result<()> {
     let args = Args::parse();
     if let Some(Command::Config) = args.command {
-        return configure(&Storage::new()?);
+        return configure(&Storage::new()?, false);
     }
 
     let first = args.first.as_deref().context("specify a manual page")?;
@@ -150,13 +150,27 @@ fn interactive() -> bool {
     io::stdin().is_terminal() && io::stdout().is_terminal()
 }
 
-pub fn configure(storage: &Storage) -> Result<()> {
+pub fn configure(storage: &Storage, first_run: bool) -> Result<()> {
     if !interactive() {
         bail!("mangl config requires an interactive terminal");
     }
 
-    let settings = storage.load()?;
+    let mut settings = storage.load()?;
+    if first_run && settings.translation.is_some() {
+        return Ok(());
+    }
     println!("Provider: Aliyun Machine Translation (General)");
+    if first_run
+        && matches!(
+            prompt("Set up translation now? [Y/n] ")?
+                .to_ascii_lowercase()
+                .as_str(),
+            "n" | "no"
+        )
+    {
+        settings.skipped_setup = true;
+        return storage.save(&settings);
+    }
     if prompt("Open the Aliyun console to activate the service? [y/N] ")?.eq_ignore_ascii_case("y")
     {
         open::that_detached(translation::CONSOLE)
