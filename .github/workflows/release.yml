@@ -55,7 +55,8 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: |
           mkdir dist
-          tar -czf "dist/mangl-${GITHUB_REF_NAME}-${PLATFORM}.tar.gz" -C target/release mangl
+          tar -czf "dist/mangl-${GITHUB_REF_NAME}-${PLATFORM}.tar.gz" \
+            -C "$GITHUB_WORKSPACE/target/release" mangl -C "$GITHUB_WORKSPACE" LICENSE
       - uses: actions/upload-artifact@v4
         with:
           name: mangl-${{ matrix.platform }}

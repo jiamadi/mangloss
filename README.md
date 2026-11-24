@@ -58,3 +58,7 @@ cargo run --locked -- -o ls
 从 [src/main.rs](src/main.rs) 进入，然后看 [src/cli.rs](src/cli.rs) 如何解析参数、[src/manual.rs](src/manual.rs) 如何把手册拆成内容块，以及 [src/translation/mod.rs](src/translation/mod.rs) 如何用线程与通道把翻译结果送回终端界面。
 
 版本号与 `Cargo.toml` 一致的 `v*` tag 会触发 [Release 工作流](.github/workflows/release.yml)。四个构建通过测试和离线阅读检查后，工作流把安装包和校验文件上传到 GitHub Release 草稿，供维护者核对并发布。
+
+## 开源协议
+
+ManGloss 采用 [MIT License](LICENSE)。
