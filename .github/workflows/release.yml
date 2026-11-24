@@ -1,0 +1,86 @@
+name: Release mangl
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            platform: macos-arm64
+            architecture: arm64
+          - runner: macos-15-intel
+            platform: macos-x86_64
+            architecture: x86_64
+          - runner: ubuntu-22.04
+            platform: linux-x86_64
+            architecture: x86_64
+          - runner: ubuntu-22.04-arm
+            platform: linux-arm64
+            architecture: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust and manual pages
+        shell: bash
+        run: |
+          rustup update stable --no-self-update
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            sudo apt-get update
+            sudo apt-get install -y man-db coreutils
+          fi
+      - name: Build and test
+        shell: bash
+        env:
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          test "$(uname -m)" = "$ARCHITECTURE"
+          cargo +stable test --locked
+          cargo +stable build --release --locked
+          test "$(target/release/mangl --version)" = "mangl ${GITHUB_REF_NAME#v}"
+          target/release/mangl -o 1 ls > manual.txt
+          test -s manual.txt
+          grep -q SYNOPSIS manual.txt
+      - name: Package
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          mkdir dist
+          tar -czf "dist/mangl-${GITHUB_REF_NAME}-${PLATFORM}.tar.gz" -C target/release mangl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mangl-${{ matrix.platform }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  draft:
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mangl-*
+          merge-multiple: true
+          path: dist
+      - name: Create draft release
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          archives=(*.tar.gz)
+          test "${#archives[@]}" -eq 4
+          sha256sum "${archives[@]}" > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" "${archives[@]}" SHA256SUMS \
+            --verify-tag --draft --generate-notes
