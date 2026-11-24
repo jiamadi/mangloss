@@ -4,6 +4,15 @@ ManGloss 是用 Rust 编写的本机 man 手册阅读器。命令名是 `mangl`�
 
 ## 安装
 
+如果已安装 Rust 和 Cargo，可以从 GitHub 源码安装：
+
+```sh
+cargo install --git https://github.com/jiamadi/mangloss.git --locked
+mangl --version
+```
+
+Cargo 会安装名为 `mangl` 的命令。也可以下载下方的预编译包。
+
 从 [GitHub Releases](https://github.com/jiamadi/mangloss/releases) 下载与你的系统和 CPU 对应的 `mangl-v版本-平台.tar.gz`。可用 `uname -m` 查看架构。
 
 | 系统 | CPU | 文件名末尾 |
