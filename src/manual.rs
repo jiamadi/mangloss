@@ -2,6 +2,8 @@ use std::{io::ErrorKind, process::Command};
 
 use anyhow::{Result, bail};
 
+pub const WIDTH: usize = 90;
+
 pub struct Manual {
     pub original: String,
     pub blocks: Vec<Block>,
@@ -18,7 +20,7 @@ pub fn read(section: Option<&str>, page: &str) -> Result<Manual> {
     command
         .env("MANPAGER", "cat")
         .env("PAGER", "cat")
-        .env("MANWIDTH", "90")
+        .env("MANWIDTH", WIDTH.to_string())
         .env("LC_ALL", "C")
         .env_remove("MANOPT")
         .env_remove("MAN_KEEP_FORMATTING");
