@@ -15,7 +15,7 @@ use crossterm::{
 
 use crate::{
     cli::{self, Mode},
-    manual::Manual,
+    manual::{self, Manual},
     settings::{Settings, Storage},
     translation::{Job, Update},
 };
@@ -167,7 +167,7 @@ fn screen(
             let (width, rows) = terminal::size()?;
             height = usize::from(rows.saturating_sub(2)).max(1);
             let width = usize::from(width).max(1);
-            lines = render_lines(manual, mode, &results, width);
+            lines = render_lines(manual, mode, &results, width.min(manual::WIDTH));
             let anchor = lines.partition_point(|line| {
                 let line = line.position;
                 (line.block, line.line) < (position.block, position.line)
